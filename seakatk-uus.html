@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayesi teoreemi kalkulaator: seakatk</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #212529;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: #fff;
+            padding: 25px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            max-width: 700px;
+            width: 100%;
+        }
+        h1, h2 {
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .intro {
+            font-size: 0.95em;
+            text-align: center;
+            margin-bottom: 25px;
+            color: #495057;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .input-group {
+            display: grid;
+            grid-template-columns: 150px 1fr 60px;
+            align-items: center;
+            gap: 15px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #dee2e6;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.9;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #007bff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #007bff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .value-display {
+            font-weight: bold;
+            color: #007bff;
+            text-align: right;
+        }
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1em;
+            text-align: right;
+        }
+        .button-container {
+            text-align: center;
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #results {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            display: none; /* Algselt peidetud */
+        }
+        #results p {
+            margin: 10px 0;
+            font-size: 1.05em;
+        }
+        #results span {
+            font-weight: bold;
+        }
+        .conclusion {
+            margin-top: 20px !important;
+            padding: 15px;
+            background-color: #e2e3e5;
+            border-left: 5px solid #007bff;
+            font-weight: bold;
+            font-size: 1.1em !important;
+        }
+        .parameters-info {
+            margin-top: 25px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .parameters-info p {
+            margin: 5px 0;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Bayesi Teoreemi Kalkulaator: Seakatku Näide</h1>
+    <p class="intro">See tööriist näitlikustab, miks isegi väga täpne veterinaartest võib anda eksitavaid tulemusi, eriti kui haigus on karjas haruldane. Muuda parameetreid ja vaata, kuidas muutub positiivse testi tegelik tähendus.</p>
+
+    <div class="controls">
+        <div class="input-group">
+            <label for="sensitivity">Testi tundlikkus:</label>
+            <input type="range" id="sensitivity" min="80" max="100" value="99" step="0.1">
+            <span id="sensitivityValue" class="value-display">99.0%</span>
+        </div>
+        <div class="input-group">
+            <label for="specificity">Testi spetsiifilisus:</label>
+            <input type="range" id="specificity" min="80" max="100" value="99" step="0.1">
+            <span id="specificityValue" class="value-display">99.0%</span>
+        </div>
+        <div class="input-group">
+            <label for="population">Testitavate sigade arv:</label>
+            <input type="number" id="population" value="10000" step="100">
+            <span>siga</span>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button id="calculateBtn">Arvuta</button>
+    </div>
+
+    <div id="results">
+        <h2>Tulemuste Analüüs</h2>
+        <div id="summary"></div>
+        <p class="conclusion" id="finalConclusion"></p>
+    </div>
+
+    <div class="parameters-info">
+        <p><b>Haiguse levik (prevalents):</b> Fikseeritud <b>0,1%</b> (1 siga 1000-st), mis on tüüpiline madala leviku korral.</p>
+        <p><b>Testi tundlikkus:</b> Tõenäosus, et haige siga saab positiivse testitulemuse.</p>
+        <p><b>Testi spetsiifilisus:</b> Tõenäosus, et terve siga saab negatiivse testitulemuse.</p>
+    </div>
+</div>
+
+<script>
+    // --- PÕHIPARAMEETRID ---
+    const PREVALENCE = 0.001; // 0.1% haiguse levik
+
+    // --- DOM ELEMENDID ---
+    const sensitivitySlider = document.getElementById('sensitivity');
+    const specificitySlider = document.getElementById('specificity');
+    const populationInput = document.getElementById('population');
+
+    const sensitivityValue = document.getElementById('sensitivityValue');
+    const specificityValue = document.getElementById('specificityValue');
+
+    const calculateBtn = document.getElementById('calculateBtn');
+    const resultsDiv = document.getElementById('results');
+    const summaryDiv = document.getElementById('summary');
+    const finalConclusionP = document.getElementById('finalConclusion');
+
+    // --- SÜNDMUSTE KUULAJAD ---
+    sensitivitySlider.addEventListener('input', () => {
+        sensitivityValue.textContent = `${parseFloat(sensitivitySlider.value).toFixed(1)}%`;
+    });
+
+    specificitySlider.addEventListener('input', () => {
+        specificityValue.textContent = `${parseFloat(specificitySlider.value).toFixed(1)}%`;
+    });
+
+    calculateBtn.addEventListener('click', calculate);
+
+    // --- ALGSEADISTUS ---
+    // Käivitame korra lehe laadimisel, et väärtused oleksid näha
+    sensitivityValue.textContent = `${parseFloat(sensitivitySlider.value).toFixed(1)}%`;
+    specificityValue.textContent = `${parseFloat(specificitySlider.value).toFixed(1)}%`;
+
+
+    // --- ARVUTUSLOOGIKA ---
+    function calculate() {
+        // Saame väärtused sisendväljadest
+        const sensitivity = parseFloat(sensitivitySlider.value) / 100;
+        const specificity = parseFloat(specificitySlider.value) / 100;
+        const population = parseInt(populationInput.value);
+
+        if (isNaN(population) || population <= 0) {
+            alert("Palun sisesta korrektne testitavate sigade arv.");
+            return;
+        }
+
+        // 1. Jaotame populatsiooni haigeteks ja terveteks
+        const sickPopulation = Math.round(population * PREVALENCE);
+        const healthyPopulation = population - sickPopulation;
+
+        // 2. Arvutame testitulemused mõlemas grupis
+        // Tõesed positiivsed: haiged, kes said positiivse testi
+        const truePositives = Math.round(sickPopulation * sensitivity);
+        // Valepositiivsed: terved, kes said positiivse testi
+        const falsePositives = Math.round(healthyPopulation * (1 - specificity));
+
+        // Tõesed negatiivsed: terved, kes said negatiivse testi
+        const trueNegatives = Math.round(healthyPopulation * specificity);
+        // Valenegatiivsed: haiged, kes said negatiivse testi
+        const falseNegatives = Math.round(sickPopulation * (1 - sensitivity));
+
+        // 3. Arvutame kokku kõik positiivsed testid
+        const totalPositiveTests = truePositives + falsePositives;
+        const totalNegativeTests = trueNegatives + falseNegatives;
+
+        // 4. Arvutame peamise tulemuse: positiivse ennustusväärtuse (PPV)
+        // P(Haige | Positiivne Test) = Tõesed Positiivsed / Kõik Positiivsed
+        let positivePredictiveValue = 0;
+        if (totalPositiveTests > 0) {
+            positivePredictiveValue = (truePositives / totalPositiveTests) * 100;
+        }
+
+        // Vormindame väljundi
+        summaryDiv.innerHTML = `
+            <p>Hüpoteetilisest <span>${population.toLocaleString('et-EE')}</span> seast on tegelikult haigeid (levimusega 0.1%) umbes <span>${sickPopulation.toLocaleString('et-EE')}</span> ja terveid <span>${healthyPopulation.toLocaleString('et-EE')}</span>.</p>
+            <hr>
+            <p><strong>Positiivse testitulemuse said kokku <span>${totalPositiveTests.toLocaleString('et-EE')}</span> siga.</strong> Nendest:</p>
+            <ul>
+                <li>Oli <b>tegelikult haigeid</b> (tõesed positiivsed): <span>${truePositives.toLocaleString('et-EE')}</span></li>
+                <li>Oli <b>tegelikult terveid</b> (valepositiivsed): <span>${falsePositives.toLocaleString('et-EE')}</span></li>
+            </ul>
+             <p><strong>Negatiivse testitulemuse said kokku <span>${totalNegativeTests.toLocaleString('et-EE')}</span> siga.</strong> Nendest:</p>
+             <ul>
+                <li>Oli <b>tegelikult terveid</b> (tõesed negatiivsed): <span>${trueNegatives.toLocaleString('et-EE')}</span></li>
+                <li>Oli <b>tegelikult haigeid</b> (valenegatiivsed): <span>${falseNegatives.toLocaleString('et-EE')}</span></li>
+            </ul>
+        `;
+
+        finalConclusionP.textContent = `JÄRELDUS: Kuigi test on väga täpne, on juhusliku sea positiivse testi korral tõenäosus, et ta on tegelikult haige, vaid ${positivePredictiveValue.toFixed(1)}%.`;
+
+        // Muudame tulemuste ploki nähtavaks
+        resultsDiv.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
