@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bayesi kalkulaator: kordustestimise mõju</title>
+    <title>Bayesi kalkulaator: kordustesti ja viiruse levimuse mõju</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
@@ -89,7 +89,6 @@
             background-color: #e9ecef; border-left: 5px solid #007bff;
             font-weight: bold; font-size: 1.1em !important;
         }
-        /* UUS: Teise testi tulemuse stiil */
         .conclusion.second-test {
             background-color: #d4edda; /* Rohekas taust */
             border-left-color: #155724; /* Tume roheline */
@@ -101,10 +100,15 @@
 <body>
 
 <div class="container">
-    <h1>Bayesi kalkulaator: kordustestimise mõju</h1>
-    <p class="intro">See kalkulaator näitlikustab, kuidas korduv testimine muudab positiivse testi tegelikku tähendust. Esiteks arvutatakse tulemus ühe testi põhjal ja seejärel näidatakse, kui palju kindlamaks muutub diagnoos teise järjestikuse positiivse testi korral.</p>
+    <h1>Bayesi kalkulaator: kordustesti ja viiruse levimuse mõju</h1>
+    <p class="intro">See tööriist näitlikustab, kuidas testi usaldusväärsus sõltub haiguse tegelikust levikust karjas (prevalentsist). Muuda parameetreid, et näha, kuidas sama test käitub haruldase haiguse ja laialdase epideemia korral.</p>
 
     <div class="controls">
+        <div class="input-group">
+            <label for="prevalence">Haiguse levik:</label>
+            <input type="range" id="prevalence" min="0.1" max="50" value="0.1" step="0.1">
+            <span id="prevalenceValue" class="value-display">0.1%</span>
+        </div>
         <div class="input-group">
             <label for="sensitivity">Testi tundlikkus:</label>
             <input type="range" id="sensitivity" min="80" max="100" value="99" step="0.1">
@@ -116,7 +120,7 @@
             <span id="specificityValue" class="value-display">99.0%</span>
         </div>
         <div class="input-group">
-            <label for="population">Testitava karja suurus:</label>
+            <label for="population">Karja suurus:</label>
             <input type="number" id="population" value="10000" step="100">
             <span>siga</span>
         </div>
@@ -134,21 +138,20 @@
     </div>
 
     <div class="parameters-info">
-        <p><b>Haiguse levik (prevalents):</b> Fikseeritud <b>0.1%</b> (1 siga 1000-st), mis on tüüpiline madala leviku korral.</p>
+        <p><b>Haiguse levik (prevalents):</b> Tõenäosus, et juhuslikult valitud siga karjast on haige.</p>
         <p><b>Testi tundlikkus:</b> Tõenäosus, et haige siga saab positiivse testitulemuse.</p>
         <p><b>Testi spetsiifilisus:</b> Tõenäosus, et terve siga saab negatiivse testitulemuse.</p>
     </div>
 </div>
 
 <script>
-    // --- PÕHIPARAMEETRID ---
-    const PREVALENCE = 0.001; // 0.1% haiguse levik
-
     // --- DOM ELEMENDID ---
+    const prevalenceSlider = document.getElementById('prevalence');
     const sensitivitySlider = document.getElementById('sensitivity');
     const specificitySlider = document.getElementById('specificity');
     const populationInput = document.getElementById('population');
 
+    const prevalenceValue = document.getElementById('prevalenceValue');
     const sensitivityValue = document.getElementById('sensitivityValue');
     const specificityValue = document.getElementById('specificityValue');
 
@@ -159,31 +162,37 @@
     const secondTestConclusionP = document.getElementById('secondTestConclusion');
 
     // --- SÜNDMUSTE KUULAJAD ---
-    sensitivitySlider.addEventListener('input', () => {
-        sensitivityValue.textContent = `${parseFloat(sensitivitySlider.value).toFixed(1)}%`;
-    });
-    specificitySlider.addEventListener('input', () => {
-        specificityValue.textContent = `${parseFloat(specificitySlider.value).toFixed(1)}%`;
-    });
+    function updateSliderValue(slider, display) {
+        display.textContent = `${parseFloat(slider.value).toFixed(1)}%`;
+    }
+    
+    prevalenceSlider.addEventListener('input', () => updateSliderValue(prevalenceSlider, prevalenceValue));
+    sensitivitySlider.addEventListener('input', () => updateSliderValue(sensitivitySlider, sensitivityValue));
+    specificitySlider.addEventListener('input', () => updateSliderValue(specificitySlider, specificityValue));
+    
     calculateBtn.addEventListener('click', calculate);
 
     // --- ALGSEADISTUS ---
-    sensitivityValue.textContent = `${parseFloat(sensitivitySlider.value).toFixed(1)}%`;
-    specificityValue.textContent = `${parseFloat(specificitySlider.value).toFixed(1)}%`;
+    // Käivitame korra lehe laadimisel, et väärtused oleksid näha
+    updateSliderValue(prevalenceSlider, prevalenceValue);
+    updateSliderValue(sensitivitySlider, sensitivityValue);
+    updateSliderValue(specificitySlider, specificityValue);
 
     // --- ARVUTUSLOOGIKA ---
     function calculate() {
-        // --- OSA 1: ESIMENE TEST (TERVE KARJA PEAL) ---
+        // Saame väärtused ja teisendame protsendid kümnendmurdudeks
+        const prevalence = parseFloat(prevalenceSlider.value) / 100;
         const sensitivity = parseFloat(sensitivitySlider.value) / 100;
         const specificity = parseFloat(specificitySlider.value) / 100;
         const population = parseInt(populationInput.value);
 
         if (isNaN(population) || population <= 0) {
-            alert("Palun sisesta õige karja suurus.");
+            alert("Palun sisesta korrektne karja suurus.");
             return;
         }
 
-        const sickPopulation = Math.round(population * PREVALENCE);
+        // --- OSA 1: ESIMENE TEST (TERVE KARJA PEAL) ---
+        const sickPopulation = Math.round(population * prevalence);
         const healthyPopulation = population - sickPopulation;
 
         const truePositives = Math.round(sickPopulation * sensitivity);
@@ -198,22 +207,16 @@
 
         // Vormindame esimese osa väljundi
         summaryDiv.innerHTML = `
-            <p>Hüpoteetilisest <span>${population.toLocaleString('et-EE')}</span> seast on tegelikult haigeid (levimusega 0,1%) umbes <span>${sickPopulation.toLocaleString('et-EE')}</span> ja terveid <span>${healthyPopulation.toLocaleString('et-EE')}</span>.</p>
+            <p>Hüpoteetilisest <span>${population.toLocaleString('et-EE')}</span> seast on tegelikult haigeid (levimusega <span>${(prevalence * 100).toFixed(1)}%</span>) umbes <span>${sickPopulation.toLocaleString('et-EE')}</span> ja terveid <span>${healthyPopulation.toLocaleString('et-EE')}</span>.</p>
             <p>Positiivse testitulemuse said kokku <span>${totalPositiveTests.toLocaleString('et-EE')}</span> siga, kellest <b>tegelikult haigeid</b> oli <span>${truePositives.toLocaleString('et-EE')}</span> ja <b>tegelikult terveid</b> (valepositiivsed) oli <span>${falsePositives.toLocaleString('et-EE')}</span>.</p>
         `;
-        firstTestConclusionP.textContent = `JÄRELDUS #1: Pärast esimest positiivset testi on tõenäosus, et siga on tegelikult haige, vaid ${(ppv1 * 100).toFixed(1)}%.`;
+        firstTestConclusionP.textContent = `JÄRELDUS #1: Pärast esimest positiivset testi on tõenäosus, et siga on tegelikult haige, ${(ppv1 * 100).toFixed(1)}%.`;
 
         // --- OSA 2: TEINE TEST (SAMA POSITIIVSE SEA PEAL) ---
-        // Esimese testi tulemus (ppv1) on nüüd meie uus algtõenäosus
         const priorForSecondTest = ppv1;
 
-        // P(Positiivne | Haige) * P(Haige)
         const numerator = sensitivity * priorForSecondTest;
-        
-        // P(Positiivne | Terve) * P(Terve)
         const denominatorPart2 = (1 - specificity) * (1 - priorForSecondTest);
-        
-        // P(Positiivne Test) = P(Pos | Haige)*P(Haige) + P(Pos | Terve)*P(Terve)
         const totalProbabilityOfPositiveTest2 = numerator + denominatorPart2;
         
         let ppv2 = 0; // Positiivne ennustusväärtus #2
@@ -221,7 +224,7 @@
             ppv2 = (numerator / totalProbabilityOfPositiveTest2) * 100;
         }
 
-        secondTestConclusionP.textContent = `JÄRELDUS #2: Kui seda sama siga testitakse uuesti ja ka teine test on positiivne, on tema tegeliku haigestumise tõenäosus hüpanud ${(ppv2).toFixed(1)}%-ni.`;
+        secondTestConclusionP.textContent = `JÄRELDUS #2: Kui see sama siga testitakse uuesti ja ka teine test on positiivne, on tema tegeliku haigestumise tõenäosus hüpanud ${(ppv2).toFixed(1)}%-ni.`;
         
         // Muudame tulemuste ploki nähtavaks
         resultsDiv.style.display = 'block';
